@@ -10,8 +10,8 @@ public class TableFunctions {
             Statement statement = connection.createStatement();
             statement.execute("create table staff_position(\n" +
                     "                               position_id integer not null, -- ID of the position\n" +
-                    "                               position_name varchar(30) not null unique,\n" +
-                    "                               position_access_level integer not null unique, -- Access level of the position\n" +
+                    "                               position_name varchar(30) not null,\n" +
+                    "                               position_access_level integer not null, -- Access level of the position\n" +
                     "                               position_salary money,\n" +
                     "                               WH_start time, -- Start of the working Hours\n" +
                     "                               WH_end time, -- End of the working Hours\n" +

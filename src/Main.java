@@ -39,11 +39,23 @@ public class Main {
         TableFunctions.clear(connection);
         TableFunctions.initialisation(connection);
 
-        Patients patient = new Patients(rand, connection);
         int numPatient = rand.nextInt(maxNumber - minNumber + 1) + minNumber;
+        int numStaff = rand.nextInt(maxNumber - minNumber + 1) + minNumber;
+        int numPos = rand.nextInt(maxNumber - minNumber + 1) + minNumber;
+        Patients patient = new Patients(numStaff, rand, connection);
+        Staff staff = new Staff(numPos, rand, connection);
         try {
+            for (int i = 0;i < numPos; ++i)
+                staff.addPosition();
+
+            System.out.println(numPos + " positions added");
+            for (int i = 0; i < numStaff; ++i)
+                staff.addStaff();
+
+            System.out.println(numStaff + " staffs added");
             for (int i = 0; i < numPatient; ++i)
                 patient.addPatient();
+
             System.out.println(numPatient + " patients added");
         } catch (Exception e) {
             e.printStackTrace();

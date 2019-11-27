@@ -1,12 +1,10 @@
 package util.generate;
 
-import java.io.*;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Random;
-import java.util.concurrent.ThreadLocalRandom;
 
 public class Patients {
     private ArrayList<String> surnames;
@@ -14,127 +12,109 @@ public class Patients {
     private ArrayList<String> addresses;
     private ArrayList<String> emails;
     private ArrayList<String> phone_numbers;
+    private ArrayList<String> profile_images;
+    private ArrayList<String> statss;
+    private ArrayList<String> commentss;
+    private ArrayList<String> descriptions;
+    private ArrayList<String> lorem;
     private Random rand;
     private Connection connection;
     private int num = 0;
+    private int numStuff;
+    private libReading lib;
 
-
-    public Patients(Random rand, Connection connection) {
+    public Patients(int numStuff, Random rand, Connection connection) {
+        this.numStuff = numStuff;
         this.rand = rand;
         this.connection = connection;
-        getNamesGenders();
-        surnames = getFromFile("surnames.txt");
-        emails = getFromFile("emails.txt");
-        addresses = getFromFile("addresses.txt");
-        phone_numbers = getFromFile("phone_numbers.txt");
+        this.lib = new libReading(rand);
+        names = lib.getNamesGenders();
+        surnames = lib.getFromFile("surnames.txt");
+        emails = lib.getFromFile("emails.txt");
+        addresses = lib.getFromFile("addresses.txt");
+        profile_images = lib.getFromFile("lorem.txt");
+        statss = lib.getFromFile("lorem.txt");
+        commentss = lib.getFromFile("lorem.txt");
+
+        phone_numbers = lib.getFromFile("phone_numbers.txt");
+
+        descriptions = lib.getFromFile("lorem.txt");
+        lorem = lib.getFromFile("lorem.txt");
     }
 
     public void addPatient() {
         PreparedStatement preparedStatement;
         try {
-            preparedStatement = connection.prepareStatement("INSERT INTO patients (pid, first_name, last_name, date_of_birth, gender, email, address)" +
-                    "VALUES (?, ?, ?, ?, ?::gender_type, ?, ?)");
+            preparedStatement = connection.prepareStatement(
+                    "INSERT INTO patients (pid, first_name, last_name, date_of_birth, gender, email, address, profile_image, stats, comments, status)" +
+                            "VALUES (?, ?, ?, ?, ?::gender_type, ?, ?, ?, ?, ?, ?)");
 
             int pid = num++;
             Name name = names.get(rand.nextInt(names.size()));
-            String surname = surnames.get(rand.nextInt(surnames.size()));
-            String address = addresses.get(rand.nextInt(addresses.size()));
-            String email = emails.get(rand.nextInt(emails.size()));
-
-            long minDay = LocalDate.of(1970, 1, 1).toEpochDay();
-            long maxDay = LocalDate.of(2010, 12, 31).toEpochDay();
-            long randomDay = ThreadLocalRandom.current().nextLong(minDay, maxDay);
-            LocalDate randomDate = LocalDate.ofEpochDay(randomDay);
-            java.sql.Date date = java.sql.Date.valueOf(randomDate);
-
+            String surname = lib.getRandString(surnames);
+            String address = lib.getRandString(addresses);
+            String email = lib.getRandString(emails);
+            String profile_image = lib.getRandString(profile_images, 100);
+            String stats = lib.getRandString(statss);
+            String comments = lib.getRandString(commentss);
+            String status = lib.getRandString(statss, 10).split(" ")[0];
+            java.sql.Date dateOfBirth = lib.getRandDate(1970, 2005);
 
             preparedStatement.setInt(1, pid);
             preparedStatement.setString(2, name.name);
             preparedStatement.setString(3, surname);
-            preparedStatement.setDate(4, date);
+            preparedStatement.setDate(4, dateOfBirth);
             preparedStatement.setString(5, GenderType.valueOf(name.gender).toString());
             preparedStatement.setString(6, email);
             preparedStatement.setString(7, address);
+            preparedStatement.setString(8, profile_image);
+            preparedStatement.setString(9, stats);
+            preparedStatement.setString(10, comments);
+            preparedStatement.setString(11, status);
+
             preparedStatement.executeUpdate();
 
 
             preparedStatement = connection.prepareStatement("INSERT INTO patient_contacts (pid, phone_number)" +
                     "VALUES (?, ?)");
+
+            int phoneNum = rand.nextInt(4);
+            for (int i = 0; i < phoneNum; ++i) {
+                Long phone_number = Long.parseLong(phone_numbers.get(rand.nextInt(phone_numbers.size())));
+                preparedStatement.setInt(1, pid);
+                preparedStatement.setObject(2, phone_number);
+
+                preparedStatement.executeUpdate();
+            }
+
+            preparedStatement = connection.prepareStatement("INSERT INTO medical_history (pid, description, time_loaded, last_modified, access_level, electronic_copy, comments)" +
+                    "VALUES (?, ?, ?, ?, ?, ?, ?)");
             preparedStatement.setInt(1, pid);
-            Long phone_number = Long.parseLong(phone_numbers.get(rand.nextInt(phone_numbers.size())));
-            preparedStatement.setObject(2, phone_number);
+            preparedStatement.setString(2, lib.getRandString(descriptions));
+
+
+            int midTime1 = dateOfBirth.toLocalDate().getYear() + rand.nextInt(2019 - dateOfBirth.toLocalDate().getYear());
+            preparedStatement.setDate(3, lib.getRandDate(dateOfBirth.toLocalDate().getYear(), midTime1));
+            preparedStatement.setDate(4, lib.getRandDate(midTime1, 2019));
+            preparedStatement.setInt(5, rand.nextInt(10) + 1);
+            preparedStatement.setString(6, lib.getRandString(lorem, 100));
+            preparedStatement.setString(7, lib.getRandString(lorem));
 
             preparedStatement.executeUpdate();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
 
+            preparedStatement = connection.prepareStatement("INSERT INTO patients_illnesses (pid, illness, illness_start, illness_finish, therapist_id, comments)" +
+                    "VALUES (?, ?, ?, ?, ?, ?)");
+            for (int i = 0; i < rand.nextInt(10); ++i) {
+                preparedStatement.setInt(1, pid);
+                preparedStatement.setString(2, lib.getRandString(lorem, 100).split(" ")[0]);
+                int midTime = 1970 + rand.nextInt(2019 - 1970);
+                preparedStatement.setDate(3, lib.getRandDate(1970, midTime));
+                preparedStatement.setDate(4, lib.getRandDate(midTime, 2019));
+                preparedStatement.setInt(5, rand.nextInt(numStuff));
+                preparedStatement.setString(6, lib.getRandString(lorem));
 
-    private ArrayList<String> getFromFile(String filename) {
-
-        InputStream input = getClass().getResourceAsStream("/res/" + filename);
-
-        BufferedReader reader = new BufferedReader(new InputStreamReader(input));
-        ArrayList<String> result = new ArrayList<>();
-        String line;
-
-        try {
-            while ((line = reader.readLine()) != null) {
-                if (line.isEmpty())
-                    continue;
-                result.add(line);
+                preparedStatement.executeUpdate();
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        try {
-            reader.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return result;
-    }
-
-    private void getNamesGenders() {
-        InputStream input = getClass().getResourceAsStream("/res/name_gender.txt");
-        BufferedReader reader = new BufferedReader(new InputStreamReader(input));
-        names = new ArrayList<>();
-        String name;
-        try {
-            while ((name = reader.readLine()) != null) {
-                String[] array = name.split(",");
-                names.add(new Name(array[0], array[1], array[2]));
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        try {
-            reader.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void parse(ArrayList<String> array) {
-        for (int i = 0; i < array.size(); i++) {
-            String s = array.get(i);
-            s = s.replaceAll("\\D", "");
-//            s = s.toLowerCase();
-//            if (!onlyLowerCase)
-//                s = Character.toUpperCase(s.charAt(0)) + s.substring(1);
-            array.set(i, s);
-        }
-    }
-
-    public static void writeParsedData(ArrayList<String> array, String filename) {
-        try {
-
-            BufferedWriter writer = new BufferedWriter(new FileWriter("res/" + filename));
-            for (int i = 0; i < array.size(); i++)
-                writer.write(array.get(i) + "\n");
-            writer.close();
         } catch (Exception e) {
             e.printStackTrace();
         }
