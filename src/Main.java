@@ -10,7 +10,7 @@ public class Main {
     public static void main(String[] args) {
         if (args.length < 3) {
             System.out.println("Please enter at least first 3 parameters :\n\t" +
-                    "database, login, password, initRandom, minNumber, maxNumber");
+                    "database, login, password, initRandom, minNumber, maxNumber, numStuff, numPatient, numPos");
             return;
         }
         Connection connection;
@@ -33,7 +33,7 @@ public class Main {
         if (4 < args.length)
             minNumber = Integer.parseInt(args[4]);
         if (5 < args.length)
-            maxNumber = Integer.parseInt(args[4]);
+            maxNumber = Integer.parseInt(args[5]);
         Random rand = new Random(initRandom);
 
         TableFunctions.clear(connection);
@@ -42,21 +42,40 @@ public class Main {
         int numPatient = rand.nextInt(maxNumber - minNumber + 1) + minNumber;
         int numStaff = rand.nextInt(maxNumber - minNumber + 1) + minNumber;
         int numPos = rand.nextInt(maxNumber - minNumber + 1) + minNumber;
-        Patients patient = new Patients(numStaff, rand, connection);
-        Staff staff = new Staff(numPos, rand, connection);
+        int numApp = rand.nextInt(maxNumber - minNumber + 1) + minNumber;
+
+
+        if (6 < args.length)
+            numStaff = Integer.parseInt(args[6]);
+
+        if (7 < args.length)
+            numPatient = Integer.parseInt(args[7]);
+        if (8 < args.length)
+            numPos = Integer.parseInt(args[8]);
+
+
+        Patients patient = new Patients(numStaff, numPatient, rand, connection);
+        Staff staff = new Staff(numPos, numStaff, rand, connection);
+        Appointment appointment = new Appointment(numStaff, numPatient, rand, connection);
+
+
         try {
             for (int i = 0;i < numPos; ++i)
                 staff.addPosition();
-
             System.out.println(numPos + " positions added");
+
             for (int i = 0; i < numStaff; ++i)
                 staff.addStaff();
-
             System.out.println(numStaff + " staffs added");
+
             for (int i = 0; i < numPatient; ++i)
                 patient.addPatient();
-
             System.out.println(numPatient + " patients added");
+
+            for (int i = 0; i < numApp; ++i)
+                appointment.addAppointment();
+            System.out.println(numApp + " Appointments added");
+
         } catch (Exception e) {
             e.printStackTrace();
         }

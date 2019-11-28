@@ -54,6 +54,13 @@ public class libReading {
         LocalDate randomDate = LocalDate.ofEpochDay(randomDay);
         return java.sql.Date.valueOf(randomDate);
     }
+    java.sql.Date getRandDate2(int yearFrom, int yearTo) {
+        long minDay = LocalDate.of(yearFrom, 1, 1).toEpochDay();
+        long maxDay = LocalDate.of(yearTo, 1, 1).toEpochDay();
+        long randomDay = (long) (Math.sqrt(Math.abs(rand.nextLong()) % (maxDay - minDay + 1)) + minDay);
+        LocalDate randomDate = LocalDate.ofEpochDay(randomDay);
+        return java.sql.Date.valueOf(randomDate);
+    }
 
 
 //    private java.sql.Timestamp getRandTimestamp(int yearFrom, int yearTo) {
@@ -95,12 +102,18 @@ public class libReading {
         }
     }
 
-     static void writeParsedData(ArrayList<String> array, String filename) {
+     void writeParsedData(ArrayList<String> array, String filename, boolean wordsInLine) {
         try {
 
             BufferedWriter writer = new BufferedWriter(new FileWriter("res/" + filename));
-            for (int i = 0; i < array.size(); i++)
-                writer.write(array.get(i) + "\n");
+            for (int i = 0; i < array.size(); i++) {
+                String[] a = array.get(i).split(" ");
+                for (int j = 0; j < a.length; ++j) {
+                    writer.write(a[j] + " ");
+                    if ((j + 1) % 20 == 0)
+                        writer.write("\n");
+                }
+            }
             writer.close();
         } catch (Exception e) {
             e.printStackTrace();
